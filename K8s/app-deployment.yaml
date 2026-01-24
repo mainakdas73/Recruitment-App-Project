@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: app
-        image: yourdockerhub/recruitment-app:1
+        image: mainak-acr-connection/recruitment-app:1
         ports:
         - containerPort: 3000
         env:
