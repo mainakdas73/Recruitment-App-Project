@@ -19,9 +19,30 @@ spec:
           image: "{{ .Values.recruitmentApp.image.repository }}:{{ .Values.recruitmentApp.image.tag }}"
           ports:
             - containerPort: {{ .Values.recruitmentApp.containerPort }}
+
           env:
             - name: MONGO_URL
               value: {{ .Values.recruitmentApp.env.MONGO_URL | quote }}
             - name: NODE_ENV
               value: {{ .Values.recruitmentApp.env.NODE_ENV | quote }}
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
 
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.recruitmentApp.containerPort }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.recruitmentApp.containerPort }}
+            initialDelaySeconds: 10
+            periodSeconds: 5
