@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: app
-        image: mainak-acr-connection/recruitment-app:1
+        image: acrmd.azurecr.io/recruitment-app:1
         ports:
         - containerPort: 3000
         env:
