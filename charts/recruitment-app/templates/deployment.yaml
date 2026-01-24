@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.recruitmentApp.name }}
+  labels:
+    {{- include "recruitment.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.recruitmentApp.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.recruitmentApp.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.recruitmentApp.name }}
+    spec:
+      containers:
+        - name: recruitment-app
+          image: "{{ .Values.recruitmentApp.image.repository }}:{{ .Values.recruitmentApp.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.recruitmentApp.containerPort }}
+          env:
+            - name: MONGO_URL
+              value: {{ .Values.recruitmentApp.env.MONGO_URL | quote }}
+            - name: NODE_ENV
+              value: {{ .Values.recruitmentApp.env.NODE_ENV | quote }}
+

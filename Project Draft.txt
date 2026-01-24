@@ -1,0 +1,334 @@
+Project Draft -
+
+Recruitment App (Node.js)
+│
+├── Frontend (public/)
+├── Backend API (server.js)
+├── MongoDB (stateful)
+│
+├── Docker
+├── Kubernetes
+├── Helm
+├── Argo CD (GitOps)
+├── AKS (Terraform)
+└── Monitoring (Prometheus + Grafana)
+
+##GitHub Application Repo: https://github.com/Msocial123/Recruitment-App-Project.git
+
+1. Dockerize the Application -
+
+Dockerfile :
+
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install --production
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]
+
+---------------------------------------------
+.dockerignore	(already created in the package)
+
+2. Create docker-compose.yaml:
+
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+    environment:
+      MONGO_URL: mongodb://mongo:27017/recruitment
+
+volumes:
+  mongo-data:
+Test locally:
+docker compose up --build
+
+3. CI Pipeline (GitHub Actions)
+
+.github/workflows/ci.yml
+name: Recruitment App CI
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  IMAGE_NAME: recruitment-app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build & Push
+      run: |
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/recruitment-app:${{ github.run_number }} .
+        docker push ${{ secrets.DOCKER_USERNAME }}/recruitment-app:${{ github.run_number }}
+
+4. Kubernetes Manifests files to be created (under dir K8s)
+
+#DB deployment -
+
+a. mongo-pvc.yaml
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongo-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+b. mongo-deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:6
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+        - mountPath: /data/db
+          name: mongo-storage
+      volumes:
+      - name: mongo-storage
+        persistentVolumeClaim:
+          claimName: mongo-pvc
+
+c. mongo-service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+spec:
+  selector:
+    app: mongo
+  ports:
+  - port: 27017
+
+#Recruitment App Deployment :
+
+a. app-deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recruitment-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: recruitment
+  template:
+    metadata:
+      labels:
+        app: recruitment
+    spec:
+      containers:
+      - name: app
+        image: yourdockerhub/recruitment-app:1
+        ports:
+        - containerPort: 3000
+        env:
+        - name: MONGO_URL
+          value: mongodb://mongo:27017/recruitment
+
+b. app-service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: recruitment-service
+spec:
+  selector:
+    app: recruitment
+  ports:
+  - port: 80
+    targetPort: 3000
+  type: ClusterIP
+
+5. Helm Chart (for GitOps) :
+
+#helm create recruitment-app
+
+a. values.yaml
+
+replicaCount: 2
+
+image:
+  repository: yourdockerhub (mainakdas73)/recruitment-app
+  tag: "1"
+
+mongo:
+  url: mongodb://mongo:27017/recruitment
+
+service:
+  port: 80
+
+b. templates/deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: recruitment
+  template:
+    metadata:
+      labels:
+        app: recruitment
+    spec:
+      containers:
+      - name: app
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        ports:
+        - containerPort: 3000
+        env:
+        - name: MONGO_URL
+          value: {{ .Values.mongo.url }}
+
+6. AKS - Terraform :
+
+If resource group is existing then use data -
+
+a. main.tf
+
+data "azurerm_resource_group" "rg" {
+  name = "LabsKraft360"
+}
+
+b. Nodepool.tf
+
+resource "azurerm_kubernetes_cluster_node_pool" "userpool" {
+  name                  = "userpool"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
+  vm_size               = "Standard_A2_v2"
+  node_count            = 2
+  mode                  = "User"
+  os_type               = "Linux"
+}
+
+7. Creating Azure Container Registry (ACR) -
+
+acr.tf
+
+resource "azurerm_container_registry" "acr" {
+  name                = "recruitmentacr123"
+  resource_group_name = data.azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+
+  sku           = "Basic"
+  admin_enabled = false
+}
+
+8. Creating AKS Cluster -
+
+a. main.tf (continue below RG block)
+
+resource "azurerm_kubernetes_cluster" "aks" {
+  name                = "recruitment-aks"
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
+  dns_prefix          = "recruitmentaks"
+
+  default_node_pool {
+    name       = "system"
+    node_count = 2
+    vm_size    = "Standard_DS2_v2"
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+}
+
+9. Grant AKS Permission to Pull Images from ACR  :
+
+##For this AKS needs AcrPull role on ACR.
+
+acr.tf (add below ACR resource)
+resource "azurerm_role_assignment" "aks_acr_pull" {
+  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
+  role_definition_name = "AcrPull"
+  scope                = azurerm_container_registry.acr.id
+}
+
+10. GitOps with Argo CD -
+
+##Install Argo CD in the cluster:
+kubectl create ns argocd
+kubectl apply -n argocd \
+-f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+Argo Application
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: recruitment-app
+  namespace: argocd
+spec:
+  source:
+    repoURL: https://github.com/your-org/recruitment-helm.git
+    path: recruitment-app
+    targetRevision: main
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+11. Monitoring 
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm install monitoring prometheus-community/kube-prometheus-stack
+

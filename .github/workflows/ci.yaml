@@ -1,0 +1,27 @@
+name: Recruitment App CI
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  IMAGE_NAME: recruitment-app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build & Push
+      run: |
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/recruitment-app:${{ github.run_number }} .
+        docker push ${{ secrets.DOCKER_USERNAME }}/recruitment-app:${{ github.run_number }}
+
