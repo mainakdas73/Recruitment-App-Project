@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  recruitment-app:
+    container_name: recruitment-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: recruitment-app:local
+    ports:
+      - "3000:3000"
+    environment:
+      MONGO_URL: mongodb://mongo:27017/hr_system
+      NODE_ENV: development
+    depends_on:
+      - mongo
+    networks:
+      - recruitment-net
+
+  mongo:
+    container_name: mongo
+    image: mongo:6
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+      - ./mongo-init-dev:/docker-entrypoint-initdb.d
+    networks:
+      - recruitment-net
+
+volumes:
+  mongo-data:
+
+networks:
+  recruitment-net:
+    driver: bridge
