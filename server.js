@@ -5,60 +5,72 @@ const path = require('path');
 
 const app = express();
 
-// ===== ENV CONFIG =====
+/* ================= ENV CONFIG ================= */
 const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGO_URL || 'mongodb://mongo:27017/hr_system';
+const MONGO_URI = process.env.MONGO_URL; // ❗ DO NOT FALL BACK TO LOCALHOST
 const DB_NAME = process.env.DB_NAME || 'hr_system';
 
-// ===== MIDDLEWARE =====
+/* ================= MIDDLEWARE ================= */
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ===== GLOBAL DB HANDLE =====
+/* ================= DB HANDLE ================= */
 let db = null;
+let mongoClient = null;
 
-// ===== HEALTH ENDPOINTS (REQUIRED FOR K8s) =====
+/* ================= HEALTH ENDPOINTS ================= */
+
+// Liveness: app process is running
 app.get('/healthz', (req, res) => {
-  res.sendStatus(200); // App is alive
+  res.sendStatus(200);
 });
 
+// Readiness: only ready when Mongo is connected
 app.get('/health', (req, res) => {
-  if (db) {
-    res.sendStatus(200); // Ready only when Mongo is connected
-  } else {
-    res.sendStatus(503);
-  }
+  if (db) return res.sendStatus(200);
+  res.sendStatus(503);
 });
 
-// ===== START SERVER FIRST (IMPORTANT) =====
+/* ================= START SERVER ================= */
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`✅ Server started on port ${PORT}`);
 });
 
-// ===== CONNECT TO MONGODB (ASYNC, NO EXIT) =====
-MongoClient.connect(MONGO_URI, { useUnifiedTopology: true })
-  .then(client => {
-    db = client.db(DB_NAME);
-    console.log('MongoDB connected:', MONGO_URI);
-  })
-  .catch(err => {
-    console.error('MongoDB connection error:', err.message);
-  });
+/* ================= MONGO CONNECT WITH RETRY ================= */
+async function connectMongo() {
+  try {
+    console.log('⏳ Connecting to MongoDB:', MONGO_URI);
 
-// ===================================================
-// ================== APP ROUTES =====================
-// ===================================================
+    mongoClient = new MongoClient(MONGO_URI);
+    await mongoClient.connect();
 
-// HR Knowledge Base for Chatbot
+    db = mongoClient.db(DB_NAME);
+    console.log('✅ MongoDB connected');
+  } catch (err) {
+    console.error('❌ MongoDB connection failed:', err.message);
+    db = null;
+
+    // Retry after 5 seconds (IMPORTANT)
+    setTimeout(connectMongo, 5000);
+  }
+}
+
+connectMongo();
+
+/* ===================================================
+   ================== APP LOGIC ======================
+   =================================================== */
+
+// HR Knowledge Base
 const hrKnowledgeBase = {
-  'leave policy': 'Employees are entitled to 12 days of casual leave, 10 days of sick leave, and 15 days of annual leave per year.',
+  'leave policy':
+    'Employees are entitled to 12 days of casual leave, 10 days of sick leave, and 15 days of annual leave per year.',
   'attendance policy': 'Standard working hours are 9 AM to 6 PM.',
-  'holidays': 'Public holidays include New Year, Independence Day, Diwali, and Christmas.',
+  holidays: 'Public holidays include New Year, Independence Day, Diwali, and Christmas.',
   'grievance procedure': 'Grievances are reviewed within 3 business days.',
-  'salary policy': 'Salaries are processed on the last working day of each month.',
+  'salary policy': 'Salaries are processed on the last working day of each month.'
 };
 
-// Chatbot helper
 function getChatbotResponse(query) {
   const lowerQuery = query.toLowerCase();
   for (const [key, value] of Object.entries(hrKnowledgeBase)) {
@@ -67,7 +79,7 @@ function getChatbotResponse(query) {
   return 'Sorry, I do not have information on that topic.';
 }
 
-// ================= AUTH =================
+/* ================= AUTH ================= */
 app.post('/api/signup', async (req, res) => {
   if (!db) return res.status(503).json({ message: 'DB not ready' });
 
@@ -85,7 +97,10 @@ app.post('/api/signup', async (req, res) => {
   }
 
   await db.collection('employees').insertOne({
-    fullName, empId, email, password
+    fullName,
+    empId,
+    email,
+    password
   });
 
   res.json({ message: 'Signup successful' });
@@ -101,7 +116,7 @@ app.post('/api/login', async (req, res) => {
   res.json({ message: 'Login successful' });
 });
 
-// ================= CHATBOT =================
+/* ================= CHATBOT ================= */
 app.post('/api/chatbot', async (req, res) => {
   if (!db) return res.status(503).json({ message: 'DB not ready' });
 
@@ -118,7 +133,7 @@ app.post('/api/chatbot', async (req, res) => {
   res.json({ response });
 });
 
-// ================= LEAVE =================
+/* ================= LEAVE ================= */
 app.post('/api/leave/apply', async (req, res) => {
   if (!db) return res.status(503).json({ message: 'DB not ready' });
 
@@ -136,8 +151,8 @@ app.post('/api/leave/apply', async (req, res) => {
   res.json({ message: 'Leave request submitted' });
 });
 
-// ================= ADMIN =================
-app.post('/api/admin/login', async (req, res) => {
+/* ================= ADMIN ================= */
+app.post('/api/admin/login', (req, res) => {
   const { adminId, password } = req.body;
   if (adminId === 'admin' && password === 'admin123') {
     return res.json({ message: 'Admin login successful' });
@@ -151,5 +166,3 @@ app.get('/api/admin/employees', async (req, res) => {
   const employees = await db.collection('employees').find({}).toArray();
   res.json(employees.map(({ password, ...e }) => e));
 });
-
-// ===================================================
