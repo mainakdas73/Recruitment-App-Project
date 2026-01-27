@@ -32,7 +32,7 @@ mongodb:
 
   service:
     name: mongo
-    type: ClusterIP
+    type: LoadBalancer
     port: 27017
 
   pvc:
