@@ -7,7 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // MongoDB connection URI and DB name
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';
+const MONGO_URI = process.env.MONGO_URL || 'mongodb://mongo:27017/hr_system';
 const DB_NAME = process.env.DB_NAME || 'hr_system';
 
 app.use(bodyParser.json());
