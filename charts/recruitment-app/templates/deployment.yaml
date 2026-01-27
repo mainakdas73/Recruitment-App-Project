@@ -39,19 +39,19 @@ spec:
               memory: "512Mi"
 
           # Pod is READY only when MongoDB is connected
-          # readinessProbe:
-          #   httpGet:
-          #     path: /health
-          #     port: {{ .Values.recruitmentApp.containerPort }}
-          #   initialDelaySeconds: 45
-          #   periodSeconds: 10
-          #   failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.recruitmentApp.containerPort }}
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            failureThreshold: 6
 
           # Pod is ALIVE as long as the app process is running
-          # livenessProbe:
-          #   httpGet:
-          #     path: /healthz
-          #     port: {{ .Values.recruitmentApp.containerPort }}
-          #   initialDelaySeconds: 60
-          #   periodSeconds: 20
-          #   failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.recruitmentApp.containerPort }}
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            failureThreshold: 5
