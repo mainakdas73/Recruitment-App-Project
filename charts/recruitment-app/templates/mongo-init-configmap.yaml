@@ -4,4 +4,9 @@ metadata:
   name: mongo-init
 data:
   init.js: |
-{{ .Files.Get "mongo-init/init.js" | indent 4 }}
+    db = db.getSiblingDB("hr_system");
+    db.createUser({
+      user: "hrapp",
+      pwd: "hrapp123",
+      roles: [{ role: "readWrite", db: "hr_system" }]
+    });
