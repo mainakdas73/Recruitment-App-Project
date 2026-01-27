@@ -17,11 +17,19 @@ spec:
       containers:
         - name: mongo
           image: "{{ .Values.mongodb.image.repository }}:{{ .Values.mongodb.image.tag }}"
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: {{ .Values.mongodb.containerPort }}
           volumeMounts:
             - name: mongo-storage
               mountPath: /data/db
+            - name: mongo-init
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: mongo-init
+          configMap:
+            name: mongo-init
+
   volumeClaimTemplates:
     - metadata:
         name: mongo-storage
