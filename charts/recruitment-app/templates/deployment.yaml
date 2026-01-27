@@ -17,6 +17,8 @@ spec:
       containers:
         - name: recruitment-app
           image: "{{ .Values.recruitmentApp.image.repository }}:{{ .Values.recruitmentApp.image.tag }}"
+          imagePullPolicy: IfNotPresent
+
           ports:
             - containerPort: {{ .Values.recruitmentApp.containerPort }}
 
@@ -25,6 +27,8 @@ spec:
               value: {{ .Values.recruitmentApp.env.MONGO_URL | quote }}
             - name: NODE_ENV
               value: {{ .Values.recruitmentApp.env.NODE_ENV | quote }}
+            - name: PORT
+              value: {{ .Values.recruitmentApp.containerPort | quote }}
 
           resources:
             requests:
@@ -34,17 +38,19 @@ spec:
               cpu: "500m"
               memory: "512Mi"
 
+          # Pod is READY only when MongoDB is connected
           readinessProbe:
             httpGet:
-              path: /
-              port: 3000
+              path: /health
+              port: {{ .Values.recruitmentApp.containerPort }}
             initialDelaySeconds: 30
             periodSeconds: 10
             failureThreshold: 6
 
+          # Pod is ALIVE as long as the app process is running
           livenessProbe:
             httpGet:
-              path: /
-              port: 3000
+              path: /healthz
+              port: {{ .Values.recruitmentApp.containerPort }}
             initialDelaySeconds: 60
             periodSeconds: 20
