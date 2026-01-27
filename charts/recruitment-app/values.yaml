@@ -12,7 +12,7 @@ recruitmentApp:
 
   service:
     name: recruitment-service
-    type: ClusterIP
+    type: LoadBalancer
     port: 80
     targetPort: 3000
 
@@ -32,7 +32,7 @@ mongodb:
 
   service:
     name: mongo
-    type: LoadBalancer
+    type: ClusterIP
     port: 27017
 
   pvc:
