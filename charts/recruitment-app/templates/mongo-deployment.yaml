@@ -1,8 +1,10 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ .Values.mongodb.name }}
+  namespace: {{ .Values.namespace }}
 spec:
+  serviceName: {{ .Values.mongodb.service.name }}
   replicas: {{ .Values.mongodb.replicas }}
   selector:
     matchLabels:
@@ -18,10 +20,15 @@ spec:
           ports:
             - containerPort: {{ .Values.mongodb.containerPort }}
           volumeMounts:
-            - mountPath: /data/db
-              name: mongo-storage
-      volumes:
-        - name: mongo-storage
-          persistentVolumeClaim:
-            claimName: {{ .Values.mongodb.pvc.name }}
-
+            - name: mongo-storage
+              mountPath: /data/db
+  volumeClaimTemplates:
+    - metadata:
+        name: mongo-storage
+      spec:
+        accessModes:
+          - {{ .Values.mongodb.pvc.accessMode }}
+        storageClassName: {{ .Values.mongodb.pvc.storageClassName }}
+        resources:
+          requests:
+            storage: {{ .Values.mongodb.pvc.size }}
