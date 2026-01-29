@@ -2,7 +2,7 @@ name: Recruitment App CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "azure-devops" ]
 
 env:
   IMAGE_NAME: recruitment-app
