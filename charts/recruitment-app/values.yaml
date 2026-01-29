@@ -6,7 +6,7 @@ recruitmentApp:
 
   image:
     repository: acrmd.azurecr.io/recruitment-app
-    tag: "10268"
+    tag: "10293"
 
   containerPort: 3000
 
@@ -26,7 +26,7 @@ mongodb:
 
   image:
     repository: mongo
-    tag: "6.0.6"
+    tag: "10293"
 
   containerPort: 27017
 
