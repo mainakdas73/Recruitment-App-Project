@@ -6,7 +6,7 @@ recruitmentApp:
 
   image:
     repository: acrmainak.azurecr.io/recruitment-app
-    tag: "10561"
+    tag: "10562"
 
   containerPort: 3000
 
@@ -26,7 +26,7 @@ mongodb:
 
   image:
     repository: mongo
-    tag: "10561"
+    tag: "10562"
     pullPolicy: IfNotPresent
 
   containerPort: 27017
