@@ -27,7 +27,7 @@ mongodb:
 
   image:
     repository: mongo
-    tag: "10507"
+    tag: "6.0"
 
   containerPort: 27017
 
