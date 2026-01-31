@@ -25,8 +25,7 @@ steps:
       
 - script: |
     echo "Updating Helm values.yaml (app image only)"
-    # sed -i "s|\(recruitmentApp.image.tag:\).*|\1 \"$(tag)\"|" charts/recruitment-app/values.yaml
-    sed -i "s|^\(\s*tag:\).*|\1 \"$(tag)\"|" charts/recruitment-app/values.yaml
+    sed -i '/recruitmentApp:/,/image:/ s|^\(\s*tag:\).*|\1 "'"$(tag)"'"|' charts/recruitment-app/values.yaml
 
     git config user.email "azure-devops@pipeline.com"
     git config user.name "azure-devops"
