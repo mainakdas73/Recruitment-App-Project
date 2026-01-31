@@ -5,7 +5,7 @@ recruitmentApp:
   replicas: 2
 
   image:
-    repository: acrmd.azurecr.io/recruitment-app
+    repository: acrmainak.azurecr.io/recruitment-app
     tag: "10268"
 
   containerPort: 3000
@@ -38,7 +38,7 @@ mongodb:
   pvc:
     name: mongo-pvc
     accessMode: ReadWriteOnce
-    storageClassName: managed-csi
+    storageClassName: managed-premium-retain
     size: 5Gi
 
 secret:

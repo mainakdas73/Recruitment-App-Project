@@ -3,7 +3,7 @@ trigger:
 
 variables:
   imageName: recruitment-app
-  acrLoginServer: acrmd.azurecr.io
+  acrLoginServer: acrmainak.azurecr.io
   tag: $(Build.BuildId)
 
 pool:
@@ -19,7 +19,7 @@ steps:
     command: buildAndPush
     repository: $(imageName)
     dockerfile: Dockerfile
-    containerRegistry: mainak-acr-connection
+    containerRegistry: recruitment-DR-connection
     tags: |
       $(tag)
       
