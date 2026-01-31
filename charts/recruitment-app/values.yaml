@@ -25,9 +25,15 @@ mongodb:
   name: mongo
   replicas: 1
 
+  # image:
+  #   repository: mongo
+  #   tag: "6.0"
+
+  mongo:
   image:
     repository: mongo
-    tag: "10522"
+    tag: "6.0.13"   # ✅ real Mongo version
+    pullPolicy: IfNotPresent
 
   containerPort: 27017
 
