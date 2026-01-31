@@ -5,9 +5,8 @@ recruitmentApp:
   replicas: 2
 
   image:
-
     repository: acrmainak.azurecr.io/recruitment-app
-    tag: "10522"
+    tag: "10522"   # 🔁 CI UPDATES ONLY THIS
 
   containerPort: 3000
 
@@ -25,14 +24,9 @@ mongodb:
   name: mongo
   replicas: 1
 
-  # image:
-  #   repository: mongo
-  #   tag: "6.0"
-
-  mongo:
   image:
     repository: mongo
-    tag: "6.0.13"   # ✅ real Mongo version
+    tag: "6.0.13"   # 🔒 FIXED — NEVER TOUCHED BY CI
     pullPolicy: IfNotPresent
 
   containerPort: 27017
@@ -52,4 +46,3 @@ secret:
   name: mongo-secret
   username: hrapp
   password: hrapp123
-
