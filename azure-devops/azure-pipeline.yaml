@@ -25,7 +25,7 @@ steps:
       
 - script: |
     echo "Updating Helm values.yaml (app image only)"
-    yq -i '.recruitmentApp.image.tag = "10523"' charts/recruitment-app/values.yaml
+    sed -i '/recruitmentApp:/,/containerPort:/ s/tag:.*/    tag: "10523"/' charts/recruitment-app/values.yaml
 
     git config user.email "azure-devops@pipeline.com"
     git config user.name "azure-devops"
