@@ -6,7 +6,7 @@ recruitmentApp:
 
   image:
     repository: acrmainak.azurecr.io/recruitment-app
-    tag: "13041"
+    tag: "13042"
 
   containerPort: 3000
 
