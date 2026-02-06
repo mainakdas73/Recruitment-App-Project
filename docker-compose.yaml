@@ -28,7 +28,7 @@ services:
       - ./mongo-init-dev:/docker-entrypoint-initdb.d
     networks:
       - recruitment-net
-# Adding volumes
+
 volumes:
   mongo-data:
 
